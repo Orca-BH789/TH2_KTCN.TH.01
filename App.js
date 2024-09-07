@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Appearance, Animated } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
 import * as math from 'mathjs';
 
@@ -9,7 +9,67 @@ export default function App() {
   const [result, setResult] = useState('');
   const [showScientific, setShowScientific] = useState(false);
   const [isRadians, setIsRadians] = useState(false);   
-  
+  const [isDarkMode, setIsDarkMode] = useState(Appearance.getColorScheme() === 'dark');
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    const subscription = Appearance.addChangeListener(({ colorScheme }) => {
+      setIsDarkMode(colorScheme === 'dark');
+    });
+    return () => subscription.remove();
+  }, []);
+
+  const toggleDarkMode = () => {
+    Animated.timing(fadeAnim, {
+      toValue: 800,
+      duration: 1000,
+      useNativeDriver: true,
+    }).start(() => {
+      setIsDarkMode(!isDarkMode);
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }).start();
+    });
+  };
+
+  const getThemeColors = () => ({
+    backgroundColor: isDarkMode ? '#121212' : '#fff',
+    textColor: isDarkMode ? '#fff' : '#000',
+    buttonColor: isDarkMode ? '#333' : '#f0f0f0',
+    scientificBgColor: isDarkMode ? '#1e1e1e' : '#232946',
+    displayBgColor: isDarkMode ? '#1e1e1e' : '#f8f5f2',
+  });
+
+  const theme = getThemeColors();
+
+  const dynamicStyles = {
+    container: {
+      backgroundColor: theme.backgroundColor,
+    },
+    display: {
+      backgroundColor: theme.displayBgColor,
+    },
+    inputText: {
+      color: theme.textColor,
+    },
+    resultText: {
+      color: theme.textColor,
+    },
+    scientificButtons: {
+      backgroundColor: theme.scientificBgColor,
+    },
+    St_button: {
+      backgroundColor: theme.buttonColor,
+    },
+    buttonText: {
+      color: theme.textColor,
+    },
+    toggleButton: {
+      color: theme.textColor,
+    },
+  };
+
   const handlePress = (input) => {
     if (input === '=') {
       if (currentInput === '' || ['+', '-', '×', '÷'].includes(currentInput.slice(-1))) {
@@ -135,37 +195,40 @@ export default function App() {
     return 20;
   };  
 
-  return (
-    <View style={styles.container}>
-      <View style={styles.display}>
-      <Text style={[styles.inputText, { fontSize: getFontSize(currentInput) }]}>{currentInput}</Text>
-      <Text style={[styles.resultText, { fontSize: getFontSize(result) + 10 }]}>{result}</Text>
-     
-      </View>
   
-    
-      <TouchableOpacity onPress={() => setShowScientific(!showScientific)}>
-        <Text style={styles.toggleButton}>{showScientific ? '≡' : '≡'}</Text>
-      </TouchableOpacity>
   
 
+  return (
+    <View style={[styles.container, dynamicStyles.container]}>
+      <TouchableOpacity style={styles.darkModeToggle} onPress={toggleDarkMode}>
+        <Feather name={isDarkMode ? 'sun' : 'moon'} size={24} color={theme.textColor} />
+      </TouchableOpacity>
+      <View style={[styles.display, dynamicStyles.display]}>
+        <Text style={[styles.inputText, dynamicStyles.inputText, { fontSize: getFontSize(currentInput) }]}>{currentInput}</Text>
+        <Text style={[styles.resultText, dynamicStyles.resultText, { fontSize: getFontSize(result) + 10 }]}>{result}</Text>
+      </View>
+
+      <TouchableOpacity onPress={() => setShowScientific(!showScientific)}>
+        <Text style={[styles.toggleButton, dynamicStyles.toggleButton]}>{showScientific ? '≡' : '≡'}</Text>
+      </TouchableOpacity>
+
       {showScientific && (
-        <View style={styles.scientificButtons}>
-          {['sin', 'cos', 'tan', 'cot', 'log', 'ln', '(', ')', '^', '√', '!', 'π', 'e', isRadians ? 'RAD' : 'DEG' ].map((btn) => (
+        <Animated.View style={[styles.container, dynamicStyles.container, { opacity: fadeAnim }]}> style={[styles.scientificButtons, dynamicStyles.scientificButtons]}>
+          {['sin', 'cos', 'tan', 'cot', 'log', 'ln', '(', ')', '^', '√', '!', 'π', 'e', isRadians ? 'RAD' : 'DEG'].map((btn) => (
             <TouchableOpacity key={btn} style={styles.Sc_button} onPress={() => handlePress(btn)}>
               <Text style={styles.Sc_buttonText}>{btn}</Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </Animated.View>
       )}
-  
-     <View style={styles.buttons}>
+
+      <View style={styles.buttons}>
         {['C', '%', 'Del', '÷', '7', '8', '9', '×', '4', '5', '6', '-', '1', '2', '3', '+', '00', '0', ',', '='].map((btn) => (
-          <TouchableOpacity key={btn} style={styles.St_button} onPress={() => handlePress(btn)}>
+          <TouchableOpacity key={btn} style={[styles.St_button, dynamicStyles.St_button]} onPress={() => handlePress(btn)}>
             {btn === 'Del' ? (
-              <Feather name="delete" size={24} color="black" />
+              <Feather name="delete" size={24} color={theme.textColor} />
             ) : (
-              <Text style={styles.buttonText}>{btn}</Text>
+              <Text style={[styles.buttonText, dynamicStyles.buttonText]}>{btn}</Text>
             )}
           </TouchableOpacity>
         ))}
@@ -174,61 +237,61 @@ export default function App() {
   );
 }
 
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: '#fff',
-    },
-    display: {
-      flex: 1,
-      backgroundColor: '#f8f5f2',
-      justifyContent: 'center',
-      alignItems: 'flex-end',
-      padding: 20,
-      marginTop: 20,
-    },
-    inputText: {      
-      color: '#333',
-    },
-    resultText: {     
-      fontWeight: 'bold',
-      color: '#000',
-    },
-    scientificButtons: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      justifyContent: 'space-around',
-      backgroundColor: '#232946',
-     
-    },
-    buttons: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',      
-    },    
-    Sc_button: {
-      width: '20%',
-      height: 45,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    St_button: {
-      width: '25%',
-      height: 60,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    buttonText: {
-      fontSize: 28,
-      color: '#333',
-    },
-    Sc_buttonText: {
-      fontSize: 18,
-      color: '#fffffe',
-    },
-    toggleButton: {
-      fontSize: 20,
-      textAlign: 'center',
-      marginVertical: 10,
-    },
-  });
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  display: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    padding: 20,
+    marginTop: 20,
+  },
+  inputText: {
+    marginBottom: 5,
+  },
+  resultText: {
+    fontWeight: 'bold',
+  },
+  scientificButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-around',
+  },
+  buttons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  Sc_button: {
+    width: '20%',
+    height: 45,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  St_button: {
+    width: '25%',
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  buttonText: {
+    fontSize: 28,
+  },
+  Sc_buttonText: {
+    fontSize: 18,
+    color: '#fffffe',
+  },
+  toggleButton: {
+    fontSize: 20,
+    textAlign: 'center',
+    marginVertical: 10,
+  },
+  darkModeToggle: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    zIndex: 1,
+  },
+});
   
