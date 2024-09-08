@@ -209,11 +209,13 @@ export default function App() {
       </View>
 
       <TouchableOpacity onPress={() => setShowScientific(!showScientific)}>
-        <Text style={[styles.toggleButton, dynamicStyles.toggleButton]}>{showScientific ? '≡' : '≡'}</Text>
+        <Text style={[styles.toggleButton, dynamicStyles.toggleButton]}>
+          {showScientific ? '≡' : '≡'}
+        </Text>
       </TouchableOpacity>
 
       {showScientific && (
-        <Animated.View style={[styles.container, dynamicStyles.container, { opacity: fadeAnim }]}> style={[styles.scientificButtons, dynamicStyles.scientificButtons]}>
+        <Animated.View style={[styles.scientificButtons, dynamicStyles.scientificButtons, { opacity: fadeAnim }]}>
           {['sin', 'cos', 'tan', 'cot', 'log', 'ln', '(', ')', '^', '√', '!', 'π', 'e', isRadians ? 'RAD' : 'DEG'].map((btn) => (
             <TouchableOpacity key={btn} style={styles.Sc_button} onPress={() => handlePress(btn)}>
               <Text style={styles.Sc_buttonText}>{btn}</Text>
